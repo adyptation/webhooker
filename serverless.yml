@@ -1,0 +1,67 @@
+org: adyptation
+app: devops
+service: webhooker
+
+package:
+  patterns:
+    - "!venv/**"
+    - "!tests/**"
+
+plugins:
+  - serverless-python-requirements
+  - serverless-wsgi
+  # - serverless-domain-manager
+custom:
+  wsgi:
+    app: app.app
+    packRequirements: false
+  stages:
+    - dev
+    - prod
+  customDomain:
+    domainName: webhooker.adypta.com
+    stage: ${self:provider.stackTags.STAGE}
+    basePath: ""
+    certificateName: ${self:custom.certificateName.${self:provider.stackTags.STAGE}}
+    createRoute53Record: true
+    endpointType: "regional"
+  certificateName:
+    dev: "api.adypta.com"
+    prod: "api.adypta.com"
+  slackChannelSecurity:
+    # all: ${ssm:/devops/slack/channel/security}
+    all: https://hooks.slack.com/services/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
+  slackChannelDevops:
+    # all: ${ssm:/devops/slack/channel/devops}
+  region:
+    dev: us-east-2
+    prod: us-east-2
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: us-east-2
+  stackTags:
+    PUBLIC: "True"
+    PRODUCT: "Devops"
+    TRIGGER: "HTTP"
+    STAGE: ${opt:stage,"dev"}
+    SERVICE: "webhooker"
+  environment:
+    SLACK_CHANNEL_SECURITY: ${self:custom.slackChannelSecurity.all}
+    SLACK_CHANNEL_DEVOPS: ${self:custom.slackChannelDevops.all}
+  ecr:
+    images:
+      webhooker-prod-app:
+        path: ./
+      webhooker-dev-app:
+        path: ./
+
+functions:
+  app:
+    events:
+      - http: ANY /
+      - http: "ANY /{proxy+}"
+    timeout: 30
+    image:
+      name: webhooker-${self:provider.stackTags.STAGE}-app

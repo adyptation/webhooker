@@ -1,0 +1,118 @@
+name: Build
+
+on:
+  push:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  APP_ENV: test
+  SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+  SONAR_TOKEN: ${{ secrets.SONAR_CLOUD_TOKEN_SHELMS }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+        with:
+          # persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # full clone of the repo
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.11"
+
+      - name: Setup NodeJS 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+
+      - name: Restore PIP Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          python -m pip install --upgrade pip setuptools wheel
+          pip install flake8 pytest coverage bandit
+          if [ -f requirements.txt ]; then pip install -r requirements.txt -r devrequirements.txt --extra-index-url https://pypi.adypta.com/; fi
+
+      - name: Lint with flake8
+        run: |
+          source venv/bin/activate
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude node_modules,venv,utils
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude node_modules,venv,utils --output-file=flake8.report
+
+      - name: Bandit Security Analysis
+        run: |
+          source venv/bin/activate
+          bandit -r . -x *node_modules/**,*venv/**,*tests/** -f json -o bandit.json --exit-zero 2> /dev/null
+          bandit -r . -x *node_modules/**,*venv/**,*tests/** -lll
+
+      - name: Test with Coverage Pytest
+        run: |
+          source venv/bin/activate
+          coverage run -m pytest
+          coverage report --omit=*/site-packages/*,tests/*,test_*.py
+          coverage xml --omit=*/site-packages/*,tests/*,test_*.py -o coverage.xml
+
+      - name: SonarCloud Coverage fix
+        run: sed -i -e "s/<source>\/home\/runner\/work\/data-analyzer\/data-analyzer<\/source>/<source>\/github\/workspace<\/source>/g" coverage.xml
+
+      - name: Analyze with SonarCloud
+        uses: sonarsource/sonarcloud-github-action@master
+
+      - name: Configure AWS Credentials
+        id: config_aws
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Set App Name
+        run: |
+          if [ ${{ github.ref != 'refs/heads/main' }} -eq 1 ]; then
+            echo "APP_NAME=webhooker-dev-app" >> $GITHUB_ENV
+          else
+            echo "APP_NAME=webhooker-prod-app" >> $GITHUB_ENV
+          fi
+
+      - name: Build Docker Image
+        run: |
+          echo "DOCKER_REPO=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com" >> $GITHUB_ENV
+          repo=$(aws ecr describe-repositories | jq -r --arg app $APP_NAME '.repositories[] | select(.repositoryName == $app).repositoryUri')
+          aws ecr get-login-password | \
+          docker login --username AWS --password-stdin $DOCKER_REPO
+          docker build -t $APP_NAME:latest .
+          docker tag $APP_NAME:latest $DOCKER_REPO/$APP_NAME:latest
+          docker push $DOCKER_REPO/$APP_NAME:latest
+
+      - name: Install Serverless Plugins
+        run: |
+          npm install
+
+      - name: Development Deploy
+        if: ${{ github.ref != 'refs/heads/main' }}
+        uses: serverless/github-action@master
+        with:
+          args: deploy --stage dev
+
+      - name: Production Deploy
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: serverless/github-action@master
+        with:
+          args: deploy --stage prod
