@@ -46,7 +46,7 @@ jobs:
           source venv/bin/activate
           python -m pip install --upgrade pip setuptools wheel
           pip install flake8 pytest coverage bandit
-          if [ -f requirements.txt ]; then pip install -r requirements.txt -r devrequirements.txt --extra-index-url https://pypi.adypta.com/; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Lint with flake8
         run: |
@@ -70,7 +70,7 @@ jobs:
           coverage xml --omit=*/site-packages/*,tests/*,test_*.py -o coverage.xml
 
       - name: SonarCloud Coverage fix
-        run: sed -i -e "s/<source>\/home\/runner\/work\/data-analyzer\/data-analyzer<\/source>/<source>\/github\/workspace<\/source>/g" coverage.xml
+        run: sed -i -e "s/<source>\/home\/runner\/work\/webhooker\/webhooker<\/source>/<source>\/github\/workspace<\/source>/g" coverage.xml
 
       - name: Analyze with SonarCloud
         uses: sonarsource/sonarcloud-github-action@master
