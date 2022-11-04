@@ -99,7 +99,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          echo "DOCKER_REPO=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEVOPS_REGION }}.amazonaws.com" >> $GITHUB_ENV
+          echo "DOCKER_REPO=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEVOPS_REGION }}.amazonaws.com" >> $GITHUB_ENV
           repo=$(aws ecr describe-repositories | jq -r --arg app $APP_NAME '.repositories[] | select(.repositoryName == $app).repositoryUri')
           aws ecr get-login-password | \
           docker login --username AWS --password-stdin $DOCKER_REPO
