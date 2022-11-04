@@ -111,9 +111,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t $APP_NAME:latest .
-          docker tag $APP_NAME:latest ${{ env.DOCKER_REPO }}/$APP_NAME:latest
-          docker push ${{ env.DOCKER_REPO }}/$APP_NAME:latest
+          docker build -t ${{ env.APP_NAME }}:latest .
+          docker tag ${{ env.APP_NAME }}:latest ${{ env.DOCKER_REPO }}/$APP_NAME:latest
+          docker push ${{ env.DOCKER_REPO }}/${{ env.APP_NAME }}:latest
 
       - name: Install Serverless Plugins
         run: |

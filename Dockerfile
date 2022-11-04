@@ -23,14 +23,15 @@ ARG FUNCTION_DIR
 # Create function directory
 RUN mkdir -p ${FUNCTION_DIR}
 
-# Copy function code
-COPY *.py ${FUNCTION_DIR}
-COPY handlers/*.py ${FUNCTION_DIR}/handlers/
-COPY requirements.txt .
-
 # Install the runtime interface client
 RUN python -m pip install --upgrade pip
 RUN python -m pip install --target ${FUNCTION_DIR} awslambdaric
+
+# Copy function code
+COPY *.py ${FUNCTION_DIR}/
+COPY handlers/*.py ${FUNCTION_DIR}/handlers/
+COPY requirements.txt .
+
 RUN python -m pip install --no-cache -r requirements.txt --target "${FUNCTION_DIR}"
 
 # Multi-stage build: grab a fresh copy of the base image
