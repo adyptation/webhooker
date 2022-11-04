@@ -21,7 +21,7 @@ def controller(app):
         # Root URL normally provide a friendly response redirecting to docs
         # so we do not need to authenticate requests to this path
         if re.search("^/$", request.path):
-            return Handler.unauthorized()
+            return Handler().unauthorized()
 
         """
         This is an old example of how we handled some adhoc auth.
@@ -30,13 +30,13 @@ def controller(app):
             "ADYPTA_SECRET", Handler.create_random_string()
         ):
             # Invalid private secret, bail out.
-            return Handler.unauthorized()
+            return Handler().unauthorized()
         """
 
     @app.route("/7cbPiUCZi", methods=["POST", "GET"])
     def malwarebytes():
         if request.method == "GET":
-            return Handler.unauthorized()
+            return Handler().unauthorized()
 
         try:
             return Handler("malwarebytes").run()

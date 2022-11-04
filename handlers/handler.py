@@ -47,7 +47,7 @@ class Handler(object):
             for _ in range(24)
         )
         val = s + str(time.time())
-        return val
+        return val[0:40]
 
     def send_to_slack(self, channel, message):
         if channel == "security":

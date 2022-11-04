@@ -12,11 +12,11 @@ from controller import create_app
 """
 
 
-def handler():
-    app = create_app()
+def handler(args=None):
+    app = create_app(args)
     return app
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     app = handler()
     app.run(debug=True)

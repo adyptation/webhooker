@@ -45,7 +45,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install flake8 pytest coverage bandit pytest-mock
+          python -m pip install flake8 pytest coverage bandit pytest-mock requests-mock
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Lint with flake8
