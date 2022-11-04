@@ -86,14 +86,22 @@ jobs:
       - name: Set App Name
         run: |
           if [ ${{ github.ref != 'refs/heads/main' }} -eq 1 ]; then
+            echo "BUILD_STAGE=dev" >> $GIBHUB_ENV
             echo "APP_NAME=webhooker-dev-app" >> $GITHUB_ENV
           else
+            echo "BUILD_STAGE=prod" >> $GIBHUB_ENV
             echo "APP_NAME=webhooker-prod-app" >> $GITHUB_ENV
           fi
 
+      - name: Get Devops Region
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "/devops/region"
+          env_variable_name: "aws_devops_region"
+
       - name: Build Docker Image
         run: |
-          echo "DOCKER_REPO=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEFAULT_REGION }}.amazonaws.com" >> $GITHUB_ENV
+          echo "DOCKER_REPO=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_DEVOPS_REGION }}.amazonaws.com" >> $GITHUB_ENV
           repo=$(aws ecr describe-repositories | jq -r --arg app $APP_NAME '.repositories[] | select(.repositoryName == $app).repositoryUri')
           aws ecr get-login-password | \
           docker login --username AWS --password-stdin $DOCKER_REPO
