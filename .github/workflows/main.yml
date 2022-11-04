@@ -107,12 +107,12 @@ jobs:
 
       - name: Development Deploy
         if: ${{ github.ref != 'refs/heads/main' }}
-        uses: serverless/github-action@master
+        uses: serverless/github-action@v3.1
         with:
           args: deploy --stage dev
 
       - name: Production Deploy
         if: ${{ github.ref == 'refs/heads/main' }}
-        uses: serverless/github-action@master
+        uses: serverless/github-action@v3.1
         with:
           args: deploy --stage prod
