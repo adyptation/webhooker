@@ -35,7 +35,7 @@ custom:
 provider:
   name: aws
   runtime: python3.9
-  region: ${ssm:/devops/region}
+  region: us-east-2
   stackTags:
     PUBLIC: "True"
     PRODUCT: "Devops"
