@@ -29,10 +29,9 @@ custom:
     dev: "api.adypta.com"
     prod: "api.adypta.com"
   slackChannelSecurity:
-    # all: ${ssm:/devops/slack/channel/security}
-    all: https://hooks.slack.com/services/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
+    all: ${ssm:/devops/slack/channel/security}
   slackChannelDevops:
-    # all: ${ssm:/devops/slack/channel/devops}
+    all: ${ssm:/devops/slack/channel/devops}
   region:
     dev: us-east-2
     prod: us-east-2
