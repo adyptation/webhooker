@@ -23,12 +23,12 @@ jobs:
           fetch-depth: 0 # full clone of the repo
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
       - name: Setup NodeJS 16.x
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "16"
 
@@ -86,10 +86,8 @@ jobs:
       - name: Set App Name
         run: |
           if [ ${{ github.ref != 'refs/heads/main' }} -eq 1 ]; then
-            echo "BUILD_STAGE=dev" >> $GIBHUB_ENV
             echo "APP_NAME=webhooker-dev-app" >> $GITHUB_ENV
           else
-            echo "BUILD_STAGE=prod" >> $GIBHUB_ENV
             echo "APP_NAME=webhooker-prod-app" >> $GITHUB_ENV
           fi
 
