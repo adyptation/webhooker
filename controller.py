@@ -1,3 +1,6 @@
+"""
+Flask controller that sets up the routes and creates the app.
+"""
 import os
 import re
 import json
@@ -35,17 +38,31 @@ def controller(app):
 
     @app.route("/7cbPiUCZi", methods=["POST", "GET"])
     def malwarebytes():
+        """
+        Handle our malwarebytes route.
+
+        It's a POST only route so handle others appropriately.
+        """
         if request.method == "GET":
             return Handler().unauthorized()
 
         try:
             return Handler("malwarebytes").run()
         except Exception as e:
-            print(e)
-            return e
+            # print(e)
+            return make_response(e)
 
 
 def create_app(config=None):
+    """
+    One stop shop to bootstrap our Flask app.
+
+    Args:
+        config(dict) - optional flask configuration
+
+    Return:
+        Flask app object
+    """
     app = Flask(__name__)
     app.config.from_object(config)
     controller(app)

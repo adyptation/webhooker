@@ -1,4 +1,5 @@
 import json
+from icecream import ic
 from handlers.handler import Handler
 
 
@@ -13,9 +14,14 @@ def test_malwarebytes(mocker, client):
     response = client.get(uri_path)
     assert b"Unauthorized." in response.data
 
-    response = client.post(uri_path, data={"incomplete": "object"})
-    assert 400 == response.status_code
-    assert b"Bad Request" in response.data
+    response = client.post(
+        uri_path,
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({"incomplete": "object"}),
+    )
+    ic(response)
+    assert 500 == response.status_code
+    assert b"Internal" in response.data
 
     payload = {
         "account_name": "adyptation",

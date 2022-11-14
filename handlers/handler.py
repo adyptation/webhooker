@@ -1,3 +1,6 @@
+"""
+Master handler class that invokes other handlers for each vendor.
+"""
 import os
 import json
 import time
@@ -9,6 +12,11 @@ from flask import request, make_response
 
 
 class Handler(object):
+    """
+    Master handler class that invokes other handlers for each vendor.
+    """
+
+    google_project_id = "adypta-webhooker"
     module_name = None
     module = None
     mod = None
@@ -18,22 +26,61 @@ class Handler(object):
     def __init__(self, module_name="malwarebytes"):
         self.module_name = module_name.title()
 
-        if self.module_name is not None:
+        if self.module_name != "":
             mod = importlib.import_module(f"handlers.{self.module_name.lower()}")
             self.module = getattr(mod, self.module_name)
 
     def unauthorized(self):
         return make_response(json.dumps({"error": "Unauthorized."}), 401, self.headers)
 
-    def invalid_data(self):
+    def invalid_data(self, e=""):
         return make_response(
-            json.dumps({"error": "Invalid data received."}), 400, self.headers
+            json.dumps({"error": "Invalid data received.", "errorMessage": e}),
+            400,
+            self.headers,
         )
 
     def misconfiguration(self):
         return make_response(
             json.dumps({"error": "Misconfiguration."}), 500, self.headers
         )
+
+    @staticmethod
+    def get_secret(project_id, secret_id):
+        """
+        Get information about the given secret. This only returns metadata about
+        the secret container, not any secret material.
+        """
+        # Import the Secret Manager client library.
+        from google.cloud import secretmanager
+
+        # Create the Secret Manager client.
+        client = secretmanager.SecretManagerServiceClient()
+
+        # Build the resource name of the secret.
+        name = client.secret_path(project_id, secret_id)
+
+        # Get the secret.
+        response = client.get_secret(request={"name": name})
+
+        # Get the replication policy.
+        if "automatic" in response.replication:
+            replication = "AUTOMATIC"
+        elif "user_managed" in response.replication:
+            replication = "MANAGED"
+        else:
+            raise "Unknown replication {}".format(response.replication)
+
+        name = f"{response.name}/versions/latest"
+        # Access the secret version.
+        response = client.access_secret_version(request={"name": name})
+
+        # Print the secret payload.
+        #
+        # WARNING: Do not print the secret in a production environment - this
+        # snippet is showing how to access the secret material.
+        payload = response.payload.data.decode("UTF-8")
+        return payload
 
     @staticmethod
     def create_random_string():
@@ -50,20 +97,46 @@ class Handler(object):
         return val[0:40]
 
     def send_to_slack(self, channel, message):
-        if channel == "security":
-            url = os.environ.get("SLACK_CHANNEL_SECURITY")
-        else:
-            url = os.environ.get("SLACK_CHANNEL_DEVOPS", None)
+        try:
+            if channel == "security":
+                url = os.environ.get(
+                    "SLACK_CHANNEL_SECURITY",
+                    self.get_secret(self.google_project_id, "slack_channel_security"),
+                )
+            else:
+                url = os.environ.get(
+                    "SLACK_CHANNEL_DEVOPS",
+                    self.get_secret(self.google_project_id, "slack_channel_devops"),
+                )
+        except Exception as e:
+            return self.invalid_data(e)
 
-        if url is None:
+        if url == "":
             return self.misconfiguration()
 
-        response = requests.post(url, json.dumps(message))
-        return make_response(json.dumps({"status": response.text}), 200, self.headers)
+        try:
+            print(f"url: {url}")
+            response = requests.post(url, json.dumps(message))
+            print(f"response.text: {response.text}")
+            return make_response(
+                json.dumps({"status": response.text}), 200, self.headers
+            )
+        except Exception as e:
+            return self.invalid_data(e)
 
     def format(self, data):
         return self.module().format(data)
 
+    def subscribe(self, **kwargs):
+        print(kwargs)
+        h = self.module()
+        return h.subscribe(**kwargs)
+
     def run(self):
-        message = self.format(request.json)
-        return self.send_to_slack("security", message)
+        try:
+            message = self.format(request.json)
+            print(message)
+            return self.send_to_slack("security", message)
+        except Exception as e:
+            print(e)
+            return make_response(json.dumps({"error": e}), 500, self.headers)
