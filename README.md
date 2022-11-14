@@ -32,5 +32,8 @@ of this project's inception, AWS Lambda only supported up to Python 3.9
 which was already in a security patch only state and Python 3.11 had
 been released. AWS has been slow to update the Python versions (<https://github.com/aws/aws-lambda-base-images/issues/31>).
 
+AWS Guide on Lambda Container support - <https://aws.amazon.com/blogs/aws/new-for-aws-lambda-container-image-support/>
+Creating Containerized Flask app - <https://pritul95.github.io/blogs/aws/2020/12/25/flask-aws-containerized-lambda/>
+
 [Steve Helms](https://github.com/stevenhelms)
-_[Last updated: 2022-11-03]_
+_[Last updated: 2022-11-04]_

@@ -109,11 +109,11 @@ jobs:
           aws s3 cp vars.txt s3://config-bucket-adyptation
           aws ecr --region ${{ env.AWS_DEVOPS_REGION }} get-login-password | docker login --username AWS --password-stdin $DOCKER_REPO
 
-      - name: Build Docker Image
+      - name: Add Serverless WSGI for Docker Build
         run: |
-          docker build -t ${{ env.APP_NAME }}:latest .
-          docker tag ${{ env.APP_NAME }}:latest ${{ env.DOCKER_REPO }}/$APP_NAME:latest
-          docker push ${{ env.DOCKER_REPO }}/${{ env.APP_NAME }}:latest
+          npm i --no-save serverless-wsgi@latest
+          cp node_modules/serverless-wsgi/serverless_wsgi.py .
+          cp node_modules/serverless-wsgi/wsgi_handler.py .
 
       - name: Install Serverless Plugins
         run: |

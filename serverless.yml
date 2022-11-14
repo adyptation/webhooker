@@ -1,6 +1,7 @@
 org: adyptation
 app: devops
 service: webhooker
+configValidationMode: error
 
 package:
   patterns:
@@ -9,28 +10,6 @@ package:
 
 plugins:
   - serverless-python-requirements
-  - serverless-wsgi
-
-custom:
-  wsgi:
-    app: app.app
-    packRequirements: false
-  stages:
-    - dev
-    - prod
-  customDomain:
-    domainName: webhooker.adypta.com
-    stage: ${self:provider.stackTags.STAGE}
-    basePath: ""
-    certificateName: ${self:custom.certificateName.${self:provider.stackTags.STAGE}}
-    createRoute53Record: true
-    endpointType: "regional"
-  certificateName:
-    dev: "api.adypta.com"
-    prod: "api.adypta.com"
-  region:
-    dev: ${ssm:/devops/region}
-    prod: ${ssm:/devops/region}
 
 provider:
   name: aws
@@ -38,7 +17,7 @@ provider:
   region: us-east-2
   stackTags:
     PUBLIC: "True"
-    PRODUCT: "Devops"
+    PRODUCT: "devops"
     TRIGGER: "HTTP"
     STAGE: ${opt:stage,"dev"}
     SERVICE: "webhooker"
@@ -46,17 +25,21 @@ provider:
     SLACK_CHANNEL_SECURITY: ${ssm:/devops/slack/channel/security}
     SLACK_CHANNEL_DEVOPS: ${ssm:/devops/slack/channel/devops}
   ecr:
+    scanOnPush: true
     images:
-      webhooker-prod-app:
+      baseimage:
         path: ./
-      webhooker-dev-app:
-        path: ./
+        file: Dockerfile
 
 functions:
   app:
-    events:
-      - http: ANY /
-      - http: "ANY /{proxy+}"
-    timeout: 30
     image:
-      name: webhooker-${self:provider.stackTags.STAGE}-app
+      name: baseimage
+      command:
+        - app.lambda_handler
+    # logs:
+    #   httpApi: true
+  other:
+    handler: wsgi_handler.handler
+    events:
+      - httpApi: "*"
