@@ -132,7 +132,7 @@ class Handler(object):
                     "SLACK_CHANNEL_DEVOPS",
                     self.get_secret(self.google_project_id, "slack_channel_devops"),
                 )
-        except Exception as e:
+        except Exception:
             return None
 
         return url
@@ -186,14 +186,10 @@ class Handler(object):
         return h.subscribe(**kwargs)
 
     def run(self):
-        try:
-            message = self.format(request.json)
-            print(message)
-            if "error" in message:
-                # Invalid JSON was presented so we error out since we can't
-                # properly format the slack message.
-                return self.invalid_data(message["error"])
-            return self.send_to_slack("security", message)
-        except Exception as e:
-            print(e)
-            return make_response(json.dumps({"error": e}), 500, self.headers)
+        message = self.format(request.json)
+        print(message)
+        if "error" in message:
+            # Invalid JSON was presented so we error out since we can't
+            # properly format the slack message.
+            return self.invalid_data(message["error"])
+        return self.send_to_slack("security", message)
