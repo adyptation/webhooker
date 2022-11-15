@@ -12,8 +12,8 @@ def test_handler_create_random_string():
     assert len(rs) == 40
 
 
-def test_handler_misconfiguration(app):
-    with app.test_request_context(
+def test_handler_misconfiguration(flaskapp):
+    with flaskapp.test_request_context(
         "/url", method="POST", headers={"X-Adypta": "Nothing"}, json={"coffee": "black"}
     ) as rc:
         response = Handler().misconfiguration()
@@ -21,7 +21,7 @@ def test_handler_misconfiguration(app):
         assert "Misconfiguration" in str(response.data)
 
 
-def test_handler_setup_slack_channel(mocker, app):
+def test_handler_setup_slack_channel(mocker, flaskapp):
     mock_url = "http://localhost.local/"
     mocker.patch.object(Handler, "get_secret", return_value=mock_url)
     os.environ["SLACK_CHANNEL_SECURITY"] = mock_url + "security"
@@ -39,10 +39,10 @@ def test_handler_setup_slack_channel(mocker, app):
     assert url is None
 
 
-def test_handler_send_to_slack(mocker, app):
+def test_handler_send_to_slack(mocker, flaskapp):
     mock_json = {"coffee": "black"}
     mock_url = "http://localhost.local/"
-    with app.test_request_context(
+    with flaskapp.test_request_context(
         "/", method="POST", headers={"X-Adypta": "Nothing"}, json=mock_json
     ) as rc:
         mocker.patch.object(Handler, "get_secret", side_effect=Exception)
