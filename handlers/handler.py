@@ -4,6 +4,7 @@ Master handler class that invokes other handlers for each vendor.
 import os
 import json
 import time
+import inspect
 import random
 import string
 import requests
@@ -50,37 +51,51 @@ class Handler(object):
         """
         Get information about the given secret. This only returns metadata about
         the secret container, not any secret material.
+
+        This process is super slow and should be avoided if possible. Using
+        environment variables as a primary and this as a backup is ideal.
+
+        Args:
+            project_id(str) - The google cloud project id
+            secret_id(str) - The secret to find the value of
+        Returns:
+            str or None - The value of the secret if defined
         """
         # Import the Secret Manager client library.
         from google.cloud import secretmanager
+        from google.auth.exceptions import DefaultCredentialsError
 
-        # Create the Secret Manager client.
-        client = secretmanager.SecretManagerServiceClient()
+        try:
+            # Create the Secret Manager client.
+            client = secretmanager.SecretManagerServiceClient()
 
-        # Build the resource name of the secret.
-        name = client.secret_path(project_id, secret_id)
+            # Build the resource name of the secret.
+            name = client.secret_path(project_id, secret_id)
 
-        # Get the secret.
-        response = client.get_secret(request={"name": name})
+            # Get the secret.
+            response = client.get_secret(request={"name": name})
 
-        # Get the replication policy.
-        if "automatic" in response.replication:
-            replication = "AUTOMATIC"
-        elif "user_managed" in response.replication:
-            replication = "MANAGED"
-        else:
-            raise "Unknown replication {}".format(response.replication)
+            # Get the replication policy.
+            if "automatic" in response.replication:
+                replication = "AUTOMATIC"
+            elif "user_managed" in response.replication:
+                replication = "MANAGED"
+            else:
+                raise "Unknown replication {}".format(response.replication)
 
-        name = f"{response.name}/versions/latest"
-        # Access the secret version.
-        response = client.access_secret_version(request={"name": name})
+            name = f"{response.name}/versions/latest"
+            # Access the secret version.
+            response = client.access_secret_version(request={"name": name})
 
-        # Print the secret payload.
-        #
-        # WARNING: Do not print the secret in a production environment - this
-        # snippet is showing how to access the secret material.
-        payload = response.payload.data.decode("UTF-8")
-        return payload
+            # Print the secret payload.
+            #
+            # WARNING: Do not print the secret in a production environment - this
+            # snippet is showing how to access the secret material.
+            payload = response.payload.data.decode("UTF-8")
+            return payload
+        except DefaultCredentialsError as dce:
+            print(dce)
+            return None
 
     @staticmethod
     def create_random_string():
@@ -122,7 +137,11 @@ class Handler(object):
                 json.dumps({"status": response.text}), 200, self.headers
             )
         except Exception as e:
-            return self.invalid_data(e)
+            return make_response(
+                json.dumps({"error": f"{__name__}:{inspect.stack()[0][3]}: {e}"}),
+                500,
+                self.headers,
+            )
 
     def format(self, data):
         return self.module().format(data)
