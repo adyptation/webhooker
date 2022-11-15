@@ -4,6 +4,7 @@ Flask controller that sets up the routes and creates the app.
 import os
 import re
 import json
+import inspect
 from flask import Flask, request, make_response
 
 from handlers.handler import Handler
@@ -49,8 +50,12 @@ def controller(app):
         try:
             return Handler("malwarebytes").run()
         except Exception as e:
-            # print(e)
-            return make_response(e)
+            msg = inspect.stack()[0][3] + " " + str(e)
+            return make_response(
+                json.dumps({"error": str(msg)}),
+                500,
+                {"Content-Type": "application/json"},
+            )
 
 
 def create_app(config=None):
