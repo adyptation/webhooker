@@ -24,6 +24,32 @@ the Alpine distro to keep the size small.
 It utilizes Github Actions to manage the builds and deploy updates
 to AWS.
 
+## Docker Notes
+
+This project evolved to support AWS and Google Cloud so there are two
+Dockerfile configurations to support each.
+
+The containers can be built locally with something similar to the following.
+
+### AWS
+
+```bash
+# Define AWS_ECR and AWS_REGION as environment variables
+APP_NAME=webhooker-dev-app
+docker build -t $APP_NAME .
+docker tag $APP_NAME:latest $AWS_ECR/$APP_NAME:latest
+# Login and push a copy up to AWS
+aws ecr --region $AWS_REGION get-login-password | docker login --username AWS --password-stdin $AWS_ECR
+docker push $AWS_ECR/$APP_NAME:latest
+```
+
+### Google Cloud
+
+```bash
+APP_NAME=gcloud-webhooker
+docker build -f Dockerfile.gcloud -t $APP_NAME .
+```
+
 ## Notes
 
 One of the key learnings from this is to dynamically build and deploy
@@ -36,4 +62,4 @@ AWS Guide on Lambda Container support - <https://aws.amazon.com/blogs/aws/new-fo
 Creating Containerized Flask app - <https://pritul95.github.io/blogs/aws/2020/12/25/flask-aws-containerized-lambda/>
 
 [Steve Helms](https://github.com/stevenhelms)
-_[Last updated: 2022-11-04]_
+_[Last updated: 2022-11-15]_

@@ -7,3 +7,4 @@ coverage.xml
 # Ignore files auto-added during the builds
 serverless_wsgi.py
 wsgi_handler.py
+.serverless-wsgi
