@@ -1,4 +1,5 @@
 --extra-index-url https://pypi.adypta.com/
+black==22.10.0
 Flask==2.2.2
 google-cloud-secret-manager==2.12.6
 icecream==2.1.3

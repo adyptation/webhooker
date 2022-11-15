@@ -20,8 +20,8 @@ def test_malwarebytes(mocker, client):
         data=json.dumps({"incomplete": "object"}),
     )
     ic(response)
-    assert 500 == response.status_code
-    assert b"Internal" in response.data
+    assert 400 == response.status_code
+    assert b"Invalid data" in response.data
 
     payload = {
         "account_name": "adyptation",

@@ -1,7 +1,10 @@
+"""
+Pytest configurations and fixtures.
+"""
 import os
 import tempfile
 import pytest
-from app import start
+import app as myapp
 
 
 @pytest.fixture
@@ -10,7 +13,7 @@ def app():
     # create a temporary file to isolate the database for each test
     db_fd, db_path = tempfile.mkstemp()
     # create the app with common test config
-    app = start({"TESTING": True, "DATABASE": db_path})
+    app = myapp.start({"TESTING": True, "DATABASE": db_path})
 
     yield app
 

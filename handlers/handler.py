@@ -9,7 +9,7 @@ import random
 import string
 import requests
 import importlib
-from flask import request, make_response
+from flask import request, make_response, wrappers
 
 
 class Handler(object):
@@ -36,7 +36,7 @@ class Handler(object):
 
     def invalid_data(self, e=""):
         return make_response(
-            json.dumps({"error": "Invalid data received.", "errorMessage": e}),
+            json.dumps({"error": f"Invalid data received. {e}"}),
             400,
             self.headers,
         )
@@ -111,7 +111,16 @@ class Handler(object):
         val = s + str(time.time())
         return val[0:40]
 
-    def send_to_slack(self, channel, message):
+    def setup_slack_channel(self, channel):
+        """
+        Given a channel name, find the URL for the channel and return it.
+
+        Args:
+            channel(str) - The name of a slack channel
+
+        Returns:
+            str - the channel URL
+        """
         try:
             if channel == "security":
                 url = os.environ.get(
@@ -124,17 +133,32 @@ class Handler(object):
                     self.get_secret(self.google_project_id, "slack_channel_devops"),
                 )
         except Exception as e:
-            return self.invalid_data(e)
+            return None
 
-        if url == "":
+        return url
+
+    def send_to_slack(self, channel, message):
+        """
+        Send a formatted message to a specific Slack channel.
+
+        Args:
+            channel(str) - The name of a slack channel
+            message(dict) - An object containing the formatted message
+        Returns:
+            Response - The Flask response to the request.
+        """
+        url = self.setup_slack_channel(channel)
+        print(f"url: {url}")
+
+        if url is None:
             return self.misconfiguration()
 
         try:
-            print(f"url: {url}")
             response = requests.post(url, json.dumps(message))
-            print(f"response.text: {response.text}")
             return make_response(
-                json.dumps({"status": response.text}), 200, self.headers
+                json.dumps({"status": response.text}),
+                response.status_code,
+                self.headers,
             )
         except Exception as e:
             return make_response(
@@ -144,6 +168,16 @@ class Handler(object):
             )
 
     def format(self, data):
+        """
+        Accept a data object and forward it to the appropriate module
+        for Slack message formatting, then return the formatted Slack message.
+
+        Args:
+            data(dict) - dict of information to be formatted
+
+        Return:
+            dict - formatted object
+        """
         return self.module().format(data)
 
     def subscribe(self, **kwargs):
@@ -155,6 +189,10 @@ class Handler(object):
         try:
             message = self.format(request.json)
             print(message)
+            if "error" in message:
+                # Invalid JSON was presented so we error out since we can't
+                # properly format the slack message.
+                return self.invalid_data(message["error"])
             return self.send_to_slack("security", message)
         except Exception as e:
             print(e)
