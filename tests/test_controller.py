@@ -1,14 +1,23 @@
+"""
+Unit tests for controller.py
+"""
 import json
 from icecream import ic
 from handlers.handler import Handler
 
 
 def test_index(client):
+    """
+    Test HTTP GET to /
+    """
     response = client.get("/")
     assert b"Unauthorized." in response.data
 
 
 def test_malwarebytes(mocker, client):
+    """
+    Test HTTP POST to url for Malwarebytes
+    """
     uri_path = "/7cbPiUCZi"
 
     response = client.get(uri_path)

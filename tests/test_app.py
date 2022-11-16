@@ -1,6 +1,13 @@
+"""
+Test app.py
+"""
 import pytest
+from app import subscribe
 
 
-def test_handler():
-    # This is no test, but simply a stub to allow the GH Actions workflow to pass
-    assert True == 1
+def test_app_subscribe():
+    """
+    Test app.subscribe()
+    """
+    response = subscribe()
+    assert response == False

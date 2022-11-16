@@ -11,6 +11,10 @@ from handlers.handler import Handler
 
 
 def controller(app):
+    """
+    Flask controller to setup routes and validators.
+    """
+
     @app.before_request
     def validate_request():
         """

@@ -75,14 +75,6 @@ class Handler(object):
             # Get the secret.
             response = client.get_secret(request={"name": name})
 
-            # Get the replication policy.
-            if "automatic" in response.replication:
-                replication = "AUTOMATIC"
-            elif "user_managed" in response.replication:
-                replication = "MANAGED"
-            else:
-                raise "Unknown replication {}".format(response.replication)
-
             name = f"{response.name}/versions/latest"
             # Access the secret version.
             response = client.access_secret_version(request={"name": name})
