@@ -41,25 +41,25 @@ def controller(app):
             return Handler().unauthorized()
         """
 
+    @app.route("/auth0", methods=["POST"])
+    def auth0():
+        """
+        Handle all of the Auth0 webhook requests.
+        """
+        return Handler("auth0").debug()
+
     @app.route("/7cbPiUCZi", methods=["POST", "GET"])
     def malwarebytes():
         """
-        Handle our malwarebytes route.
+        Handle all of the malwarebytes webhook requests.
 
         It's a POST only route so handle others appropriately.
+        This is nonsense testing mumbo jumbo.
         """
         if request.method == "GET":
             return Handler().unauthorized()
 
-        try:
-            return Handler("malwarebytes").run()
-        except Exception as e:
-            msg = inspect.stack()[0][3] + " " + str(e)
-            return make_response(
-                json.dumps({"error": str(msg)}),
-                500,
-                {"Content-Type": "application/json"},
-            )
+        return Handler("malwarebytes").run()
 
 
 def create_app(config=None):
