@@ -29,6 +29,48 @@ class Auth0(Handler):
 
         return provided_string == valid_string
 
+    def format(self, payload):
+        """
+        Format a Slack message based on specific payload data.
+
+        Args:
+            payload(dict) - dict of information to be formatted
+
+        Return:
+            dict - formatted object
+        """
+        print(payload)
+        if not payload.get("data"):
+            return {}
+
+        pd = payload["data"]
+        payload_type = "Login Success." if pd["type"] == "s" else pd["description"]
+
+        message = {
+            "text": f"Auth0: {payload_type}",
+            "blocks": [
+                # {
+                #     "type": "header",
+                #     "text": {
+                #         "type": "plain_text",
+                #         "text": f"Auth0: {payload_type}",
+                #     },
+                # },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            f"*Auth0*: - {pd['user_name']} {payload_type}\n"
+                            f"On _{pd['client_name']}_ via _{pd['connection']}_ "
+                            f"at {pd['date']}"
+                        ),
+                    },
+                },
+            ],
+        }
+        return message
+
     def debug(self, **kwargs):
         print(f"kwargs: {str(kwargs)}")
         print(request.json)

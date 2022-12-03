@@ -177,10 +177,11 @@ class Handler(object):
         h = self.module()
         return h.subscribe(**kwargs)
 
-    def debug(self, **kwargs):
-        return self.module().debug(**kwargs)
+    def run(self, **kwargs):
+        debug = kwargs.get("debug", False)
+        if debug:
+            return self.module().debug(**kwargs)
 
-    def run(self):
         message = self.format(request.json)
         print(message)
         if "error" in message:

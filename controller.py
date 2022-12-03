@@ -41,12 +41,13 @@ def controller(app):
             return Handler().unauthorized()
         """
 
-    @app.route("/auth0", methods=["POST"])
-    def auth0():
+    @app.route("/auth0/<func>", methods=["POST"])
+    def auth0(func):
         """
         Handle all of the Auth0 webhook requests.
         """
-        return Handler("auth0").debug()
+        debug = True if str(func) == "debug" else False
+        return Handler("auth0").run(debug=debug)
 
     @app.route("/7cbPiUCZi", methods=["POST", "GET"])
     def malwarebytes():
