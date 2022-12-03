@@ -113,4 +113,5 @@ if __name__ == "__main__":  # pragma: no cover
         subscribe(url=runtime.url, vendor=runtime.vendor, secret=runtime.secret)
     else:
         server_port = os.environ.get("PORT", "8080")
-        app.run(debug=runtime.DEBUG, port=server_port)
+        server_host = os.environ.get("HOST", "127.0.0.1")
+        app.run(debug=runtime.DEBUG, port=server_port, host=server_host)
